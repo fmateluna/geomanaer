@@ -1,0 +1,17 @@
+{
+    "AVENIDA": ["AV", "AVDA", "AVN", "AVE", "AVDA", "AVEN"],
+    "CALLE": ["CLL", "CL", "CAL", "C", "CALLE", "CLLA"],
+    "PASAJE": ["PJE", "PJ", "PASJ", "PJS", "PASAJE", "PSJE","PSJ"],
+    "CAMINO": ["CAM", "C", "CNA", "CAMINO", "CNA", "CAM"],
+    "CARRETERA": ["CARRET", "CTRA", "CRRTERA", "CARR", "CAR", "CTRA"],
+    "SOBRENIVEL": ["SB NIV", "SOB NIV", "SBN", "SOBRENIVEL", "SOBNIV", "SB"],
+    "BAJONIVEL": ["BJ NIV", "BAJ NIV", "BJN", "BAJONIVEL", "BJ", "BAJN"],
+    "PUENTE": ["PT", "PU", "PTE", "PUENTE", "PTE", "PTE"],
+    "HUELLA": ["HLL", "HUE", "HUELLA", "HLLA", "HUE", "HL"],
+    "ESCALA": ["ESC", "ESCALA", "ESCA", "ES", "E", "ESCAL"],
+    "PRINCIPAL": ["PRIN", "PRC", "PRINCIPAL", "P", "PR", "PINC"],
+    "SECUNDARIO": ["SEC", "SECUNDARIO", "SCD", "SECD", "SECU", "SCD"],
+    "PEATONAL": ["PTNAL", "PEATONAL", "PEAT", "PT", "PTL", "PEA"],
+    "SENDERO": ["SND", "SEND", "SENDERO", "SNDRO", "SEN", "SENRO"],
+    "PASARELA": ["PSRL", "PASAR", "PASARELA", "PSR", "PS", "PAS"]
+}

@@ -1,0 +1,6 @@
+{
+    "LOCALIDADES": "./database/localidades.duckdb",
+    "MAESTROCALLES": "./database/maestro_calles.duckdb",
+    "APT": "./database/apt_chile.duckdb"
+  }
+  
