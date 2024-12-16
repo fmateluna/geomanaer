@@ -23,6 +23,9 @@ def esta_en_comuna(cut_com: str, lat: float, lon: float) -> dict:
     :param lon: Longitud del punto.
     :return: True si el punto está en la comuna, False en caso contrario.
     """
+    if len(cut_com)==4:
+        cut_com = '0'+cut_com
+    
     # Crear conexión a la base de datos
     engine = create_engine(DATABASE_SERVEL_URL, poolclass=NullPool)
 
@@ -39,7 +42,7 @@ def esta_en_comuna(cut_com: str, lat: float, lon: float) -> dict:
         return False
 
     if gdf.empty:
-        return {"error": f"No se encontró la comuna con cut_com: {cod_comuna}"}
+        return {"error": f"No se encontró la comuna con cut_com: {cut_com}"}
 
     # Crear el punto a partir de latitud y longitud
     punto = Point(lon, lat)

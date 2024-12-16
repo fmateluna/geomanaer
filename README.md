@@ -53,8 +53,9 @@ Los siguientes archivos deben estar disponibles en el directorio `data/`:
 ---
 ejecutar 
 
-En modo desarrollador
+###En modo desarrollador
 python -m venv venv
 pip freeze > requirements.txt
+uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 

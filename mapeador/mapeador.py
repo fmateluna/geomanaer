@@ -75,8 +75,8 @@ def procesa_direccion_maestro_calle(direccion_procesada: InfoGeoDireccion):
         direccion_procesada.nombre_via = mejor_resultado_callejero["NOMBRE_VIA"]
         datos_callejeros.jerarquia = mejor_resultado_callejero["JERARQUIA"]
         datos_callejeros.cen_lat = mejor_resultado_callejero["CEN_LAT"]
-        datos_callejeros.cut = mejor_resultado_callejero["CUT"]
-        datos_callejeros.cut_r = mejor_resultado_callejero["CUT_R"]
+        datos_callejeros.cut = str(mejor_resultado_callejero["CUT"])
+        datos_callejeros.cut_r = str(mejor_resultado_callejero["CUT_R"])
         datos_callejeros.cen_lat = mejor_resultado_callejero["CEN_LAT"]
         datos_callejeros.cen_lon = mejor_resultado_callejero["CEN_LON"]
         

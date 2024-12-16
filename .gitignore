@@ -1,0 +1,11 @@
+ .vscode/
+__pycache__/
+api/__pycache__/
+database/apt_chile.duckdb
+database/csv_data/
+database/localidades.duckdb
+database/maestro_calles.duckdb
+mapeador/__pycache__/
+mapeador/config/__pycache__/
+updatereq.bat
+venv/
