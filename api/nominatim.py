@@ -15,7 +15,7 @@ class NominatimService:
         """
         try:
             params = {
-                "q": address,
+                "q": address + ", Chile",
                 "format": "json",
                 "limit": 1
             }

@@ -272,13 +272,22 @@ def retornaGeolocalizacion(request: RequestGetGeo):
         )
         if nominatim_response is not None:
             direccion_procesada.nominatim = nominatim_response
-            resumen = {
-                "direccion": nominatim_response.get("display_name"),
-                "latitud": nominatim_response.get("lat"),
-                "longitud": nominatim_response.get("lon"),
-                "origen": "Nominatim",
-            }
-            encontre_en_nominatim = True
+            
+            #Consultar si tiene el numero en su display_name  ()  gi
+            if nominatim_response is not None:
+                direccion_procesada.nominatim = nominatim_response
+
+                # Consultar si tiene el número en su display_name
+                display_name = nominatim_response.get("display_name", "")
+                if direccion_procesada.numero in display_name:
+                    resumen = {
+                        "direccion": display_name,
+                        "latitud": nominatim_response.get("lat"),
+                        "longitud": nominatim_response.get("lon"),
+                        "origen": "Nominatim",
+                    }
+                    encontre_en_nominatim = True
+
         else:
             google_maps_service = GoogleMapsService()
             response_api_google_maps = google_maps_service.obtener_geolocalizacion(

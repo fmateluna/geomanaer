@@ -17,7 +17,7 @@ class GoogleMapsService:
         """
         try:
             params = {
-                "address": address,
+                "address": address+ ", Chile",
                 "key": self.api_key
             }
 
