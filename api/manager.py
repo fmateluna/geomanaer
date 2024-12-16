@@ -1,3 +1,4 @@
+import re
 from api.apt_chile import AptChile
 from api.geopanda_util import esta_en_comuna
 from api.googlemaps import GoogleMapsService
@@ -14,6 +15,32 @@ from mapeador.mapeador import (
     procesar_direccion,
 )
 from fuzzywuzzy import fuzz
+
+from word2number import w2n
+
+def procesar_numero(numero: str) -> str:
+    """
+    Procesa el valor de 'numero' para devolver un número válido o una cadena vacía si no es válido.
+    """
+    if not numero or numero.strip().upper() in {"SIN NUMERO", "SIN NRO", "S/N", "SN", "SINNUMERO", "NAN", "NULL"}:
+        return ""
+
+    try:
+        # Convertir texto numérico a número (ejemplo: "doscientos veintidós" → 222)
+        texto_a_numero = w2n.word_to_num(numero.lower())
+        return str(texto_a_numero)
+    except ValueError:
+        pass
+
+    # Intentar extraer números directos primero
+    match = re.search(r'\b\d+\b', numero)
+    if match:
+        return match.group()  # Retorna el número encontrado
+
+    # Si no se encuentra un número válido, retorna vacío
+    return ""
+
+
 
 def convertir_a_float(valor, nombre_campo):
     try:
@@ -97,13 +124,14 @@ def retornaGeolocalizacion(request: RequestGetGeo):
 
     nombre_via = request.nombre_via
     
-    #Representacion de NO NUMEROS = "SN",
+    #Representacion de NO NUMEROS = "SN" o numeros escritor como once o casos como calle 13,
+    direccion_original.numero = procesar_numero(request.numero)
 
     direccion_original.comuna = request.comuna
     direccion_original.region = request.region
     direccion_original.nombre_via = request.nombre_via
     direccion_original.provincia = request.provincia
-    direccion_original.numero = request.numero
+    
 
     direccion_no_procesada = direccion_original.copy()
     

@@ -51,3 +51,10 @@ Los siguientes archivos deben estar disponibles en el directorio `data/`:
 - `APT_CHILE.csv`: Geocoder predefinido con coordenadas rooftop.
 
 ---
+ejecutar 
+
+En modo desarrollador
+python -m venv venv
+pip freeze > requirements.txt
+
+
