@@ -14,7 +14,7 @@ from contextlib import contextmanager
 DB_URI = "postgresql://usuario:contraseña@host:puerto/nombre_base_datos"
 
 
-def esta_en_comuna(cut_com: str, lat: float, lon: float) -> dict:
+def esta_en_comuna(comuna:str, cut_com: str, lat: float, lon: float) -> dict:
     """
     Verifica si un punto (lat, lon) está dentro de la comuna especificada por cut_com.
 
@@ -31,7 +31,7 @@ def esta_en_comuna(cut_com: str, lat: float, lon: float) -> dict:
 
     # Consulta para obtener la geometría de la comuna
     query = (
-        f"SELECT  cut_com, comuna, geom FROM owd.comunas WHERE cut_com = '{cut_com}'"
+        f"SELECT  cut_com, comuna, geom FROM owd.comunas WHERE cut_com = '{cut_com}' or comuna='{comuna}' Limit 1"
     )
 
     # Cargar el resultado como un GeoDataFrame
@@ -42,7 +42,7 @@ def esta_en_comuna(cut_com: str, lat: float, lon: float) -> dict:
         return False
 
     if gdf.empty:
-        return {"error": f"No se encontró la comuna con cut_com: {cut_com}"}
+        return {"error": f"No se encontró la comuna con cut_com: {cut_com}  o {comuna}"}
 
     # Crear el punto a partir de latitud y longitud
     punto = Point(lon, lat)

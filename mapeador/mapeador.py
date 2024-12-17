@@ -126,7 +126,7 @@ def corregir_glosario(texto, diccionario):
 
     for palabra in palabras:
         similitud = fuzz.ratio(texto, palabra)
-        if similitud > mejor_similitud and similitud >= 60:  # 80% de similitud mínima
+        if similitud > mejor_similitud and similitud >= 80:  # 80% de similitud mínima
             mejor_match = palabra
             mejor_similitud = similitud
     return mejor_match if mejor_match else texto
@@ -143,40 +143,43 @@ def traducir_jerarquia(texto, jerarquias):
 
 # Procesar dirección completa, corrigiendo y traduciendo todas las palabras
 def procesar_direccion(direccion: InfoGeoDireccion):
+    # Cargar mapeos de jerarquías y abreviaciones
     jerarquias = cargar_traductores("mapeador/jerarquias.json")
     abreviaciones = cargar_traductores("mapeador/abreviaciones.json")
+
+    # Dividir el nombre de la vía en partes
     partes_nombre_via = direccion.nombre_via.split()
     partes_corregidas = []
 
     for palabra in partes_nombre_via:
+        # Intentar corregir la palabra usando el glosario de jerarquías
         palabra_corregida = corregir_glosario(palabra, jerarquias)
-        palabra_corregida = corregir_glosario(palabra_corregida, abreviaciones)
-        jerarquia_normalizada = traducir_jerarquia(palabra_corregida, jerarquias)
-        if direccion.jerarquia == "":
-            direccion.jerarquia = jerarquia_normalizada
-              
-            
+
+        # Verificar si la palabra corregida coincide con alguna clave (key) en jerarquías
+        jerarquia_normalizada = None
+        for key in jerarquias:
+            if palabra_corregida == key:  # Comparar directamente con la clave
+                jerarquia_normalizada = key
+                break  # Salir del bucle al encontrar coincidencia
+
+        if jerarquia_normalizada:
+            if direccion.jerarquia == "":
+                direccion.jerarquia = jerarquia_normalizada
+        else:
+            # Si no es una jerarquía, intentar corregir con abreviaciones
+            palabra_corregida = corregir_glosario(palabra_corregida, abreviaciones)
+
+        # Agregar la palabra corregida a la lista
         partes_corregidas.append(palabra_corregida)
 
+    # Reconstruir la dirección formateada
     direccion.direccion_formateada = " ".join(partes_corregidas)
 
     return direccion
 
 
-# Procesar texto simple (comuna, region, provincia)
-def procesar_texto_simple(texto, jerarquias):
-    if not texto:
-        return texto  # Devuelve texto vacío si no hay nada que procesar
 
-    palabras = texto.split()
-    palabras_corregidas = []
 
-    for palabra in palabras:
-        palabra_corregida = corregir_glosario(palabra, jerarquias)
-        jerarquia_normalizada = traducir_jerarquia(palabra_corregida, jerarquias)
-        palabras_corregidas.append(jerarquia_normalizada)
-
-    return " ".join(palabras_corregidas)
 
 
 

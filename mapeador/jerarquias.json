@@ -17,7 +17,7 @@
     "CALLEJÓN": ["CALL", "CJN"],
     "ROTONDA": ["ROT", "RTN", "RTDA"],
     "KILOMETRO": ["KM", "K", "K°"],
-    "PARCELA": ["PC", "PARC"],
+    "PARCELA": ["PC", "PARC","PARCE"],
     "FUNDO": ["FNDO", "FUN"],
     "HACIENDA": ["HAC", "HC", "HDA"],
     "VILLA": ["VI", "VLLA", "V°"]

@@ -16,6 +16,14 @@ from mapeador.mapeador import (
 )
 from fuzzywuzzy import fuzz
 
+def convertir_a_float(valor, nombre_campo):
+    try:
+        return float(valor)
+    except (TypeError, ValueError):
+        print(f"Error: El valor de {nombre_campo} no se pudo convertir a float. Valor actual: {valor}")
+        return None
+
+
 def procesar_numero(numero: str) -> str:
     """
     Procesa el valor de 'numero' para devolver un número válido o una cadena vacía si no es válido.
@@ -39,14 +47,7 @@ def procesar_numero(numero: str) -> str:
     # Si no se encuentra un número válido, retorna vacío
     return ""
 
-def convertir_a_float(valor, nombre_campo):
-    try:
-        return float(valor)
-    except (TypeError, ValueError):
-        print(
-            f"Error: El valor de {nombre_campo} no se pudo convertir a float. Valor actual: {valor}"
-        )
-        return None
+
 
 
 def formatea_direcciones(direccion_original: InfoGeoDireccion):
@@ -275,11 +276,9 @@ def retornaGeolocalizacion(request: RequestGetGeo):
             
             #Consultar si tiene el numero en su display_name  ()  gi
             if nominatim_response is not None:
-                direccion_procesada.nominatim = nominatim_response
-
-                # Consultar si tiene el número en su display_name
                 display_name = nominatim_response.get("display_name", "")
-                if direccion_procesada.numero in display_name:
+                direccion_procesada.nominatim = nominatim_response                    
+                if direccion_procesada.numero in display_name or direccion_procesada.numero=="":
                     resumen = {
                         "direccion": display_name,
                         "latitud": nominatim_response.get("lat"),
@@ -288,14 +287,13 @@ def retornaGeolocalizacion(request: RequestGetGeo):
                     }
                     encontre_en_nominatim = True
 
-        else:
+        if not encontre_en_nominatim:
             google_maps_service = GoogleMapsService()
             response_api_google_maps = google_maps_service.obtener_geolocalizacion(
-                direccion_para_apis_externas
+                direccion_para_apis_externas, direccion_procesada
             )
             if response_api_google_maps is not None:
                 direccion_procesada.google_maps = response_api_google_maps
-                location = response_api_google_maps["geometry"]["location"]
                 direccion_google = response_api_google_maps["formatted_address"]
 
                 validando_google = fuzz.ratio(
@@ -313,6 +311,7 @@ def retornaGeolocalizacion(request: RequestGetGeo):
                 if (
                     validando_google > 50 or porcentaje_palabras_comunes > 75
                 ):  # Ajusta el porcentaje según necesidad
+                    location = response_api_google_maps["geometry"]["location"]
                     resumen = {
                         "direccion": direccion_google,
                         "latitud": location["lat"],
@@ -330,7 +329,7 @@ def retornaGeolocalizacion(request: RequestGetGeo):
                 "direccion": "",
                 "latitud": lat,
                 "longitud": lon,
-                "origen": "ERROR",
+                "origen": "DIRECCION NO ENCONTRADA",
             }
 
     # inicia como si no tuviera lat y lon, dado que eso se calcula despues
@@ -344,7 +343,7 @@ def retornaGeolocalizacion(request: RequestGetGeo):
 
         if latitud_geo_panda is not None and longitud_geo_panda is not None:
             comuna = esta_en_comuna(
-                datos_callejeros.cut, latitud_geo_panda, longitud_geo_panda
+                direccion_procesada.comuna, datos_callejeros.cut, latitud_geo_panda, longitud_geo_panda
             )
 
     except Exception as e:
