@@ -1,7 +1,7 @@
 import os
 import json
 from pathlib import Path
-from api.manager import retornaGeolocalizacion
+from api.manager import retorna_geolocalizacion
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -37,7 +37,7 @@ async def get_geo_endpoint(request: RequestGetGeo):
             }
 
         # Llamar a retornaGeolocalizacion con los datos del diccionario
-        return retornaGeolocalizacion(request)        
+        return retorna_geolocalizacion(request)        
 
     except Exception as e:
         raise HTTPException(

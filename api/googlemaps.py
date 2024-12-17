@@ -1,7 +1,6 @@
 import os
 import requests
 from typing import Dict, Any
-
 from api.payloads import InfoGeoDireccion
 
 
@@ -11,7 +10,7 @@ class GoogleMapsService:
         self.api_key = os.getenv("GOOGLE_API_KEY", "")
 
     def obtener_geolocalizacion(
-        self, address: str, direccion_procesada: InfoGeoDireccion
+        self, address: str, is_rural:bool
     ) -> Dict[str, Any]:
         """
         Consulta la API de Google Maps para obtener las coordenadas geográficas de una dirección,
@@ -37,7 +36,7 @@ class GoogleMapsService:
                     in ["ROOFTOP", "RANGE_INTERPOLATED"]
                 ]
 
-                if valid_results or direccion_procesada.numero == "":
+                if valid_results or is_rural:
                     # Retornar el primer resultado válido filtrado
                     if valid_results:
                         result = valid_results[0]

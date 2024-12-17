@@ -160,7 +160,7 @@ def procesar_direccion(direccion: InfoGeoDireccion):
         for key in jerarquias:
             if palabra_corregida == key:  # Comparar directamente con la clave
                 jerarquia_normalizada = key
-                break  # Salir del bucle al encontrar coincidencia
+                break  
 
         if jerarquia_normalizada:
             if direccion.jerarquia == "":

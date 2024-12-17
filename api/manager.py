@@ -54,18 +54,13 @@ def formatea_direcciones(direccion_original: InfoGeoDireccion):
     nombre_via_sin_procesar = direccion_original.nombre_via
 
     # Medir tiempo para formatear la dirección original
-    direccion_format = (
-        direccion_original.nombre_via
-        + " "
-        + direccion_original.numero
-        + " , "
-        + direccion_original.comuna
-        + " ,"
-        + direccion_original.region
-    )
-    direccion_original.direccion_formateada = direccion_format
-    direccion_procesada = procesar_direccion(direccion_original)
-    mejor_resultado = procesa_direccion_maestro_calle(direccion_procesada)
+
+    if not es_clasificacion_rural(nombre_via_sin_procesar):
+        direccion_procesada = procesar_direccion(direccion_original)
+        mejor_resultado = procesa_direccion_maestro_calle(direccion_procesada)
+    else:
+        mejor_resultado = procesa_direccion_maestro_calle(direccion_original)
+        direccion_procesada = direccion_original
 
     # RUTINA DE VALIDACION DE DIRECCION PROCESADA
 
@@ -87,6 +82,8 @@ def formatea_direcciones(direccion_original: InfoGeoDireccion):
             mejor_resultado.apt_score += (
                 34  # Asignar 34 puntos por coincidencia en nombre_via
             )
+        else:
+            direccion_procesada.nombre_via = nombre_via_sin_procesar 
 
         # Comparar comuna
         if direccion_procesada.comuna == mejor_resultado.comuna:
@@ -111,8 +108,29 @@ def formatea_direcciones(direccion_original: InfoGeoDireccion):
         direccion_procesada.apt_score = 0
         return direccion_procesada
 
+def es_clasificacion_rural(nombre_via_original: str) -> bool:
+    """
+    Verifica si el nombre de la vía original contiene algún término asociado a ruralidad.
+    
+    :param nombre_via_original: String que representa el nombre original de la vía.
+    :return: True si contiene un término de la lista de ruralidad, False en caso contrario.
+    """
+    # Lista de términos asociados a ruralidad
+    terminos_ruralidad = [
+        "RUTA", "KILOMETRO", "KM", "HACIENDA", "HAC", 
+        "FUNDO", "FDO", "PARCELA", "PARCELACION", "PARC", 
+        "PC", "SECTOR", "SITIO", "ST", "HIJUELA", 
+        "ASENTAMIENTO", "LOTE", "LT"
+    ]
+    
+    
+    nombre_via_original_upper = nombre_via_original.upper()
+    
+    return any(termino in nombre_via_original_upper for termino in terminos_ruralidad)
 
-def retornaGeolocalizacion(request: RequestGetGeo):
+
+
+def retorna_geolocalizacion(request: RequestGetGeo):
 
     resumen = {}  # <-- El resumen
     direccion_original = InfoGeoDireccion()
@@ -122,7 +140,7 @@ def retornaGeolocalizacion(request: RequestGetGeo):
     encontre_en_google = False
     encontre_en_nominatim = False
 
-    nombre_via = request.nombre_via
+    nombre_via_original = request.nombre_via
 
     # Representacion de NO NUMEROS = "SN" o numeros escritor como once o casos como calle 13,
     request.numero = procesar_numero(request.numero)
@@ -137,11 +155,14 @@ def retornaGeolocalizacion(request: RequestGetGeo):
 
     direccion_procesada = direccion_no_procesada
     direccion_procesada.apt_score = 0
+    
+    
     direccion_procesada = formatea_direcciones(direccion_original)
+        
     exactitud_nombre_via = fuzz.ratio(
         # Este es el caso cuando no hay forma de encontrar en el meastro de calles un formato adecuado
         direccion_procesada.nombre_via.upper(),
-        nombre_via,
+        nombre_via_original,
     )
 
     datos_callejeros = direccion_procesada.datos_callejeros
@@ -267,6 +288,8 @@ def retornaGeolocalizacion(request: RequestGetGeo):
             + direccion_procesada.region
         )
 
+        is_rural = (direccion_procesada.numero == "" or  es_clasificacion_rural(direccion_para_apis_externas))
+
         nominatim_service = NominatimService()
         nominatim_response = nominatim_service.obtener_geolocalizacion(
             direccion_para_apis_externas
@@ -278,7 +301,7 @@ def retornaGeolocalizacion(request: RequestGetGeo):
             if nominatim_response is not None:
                 display_name = nominatim_response.get("display_name", "")
                 direccion_procesada.nominatim = nominatim_response                    
-                if direccion_procesada.numero in display_name or direccion_procesada.numero=="":
+                if direccion_procesada.numero in display_name or is_rural:
                     resumen = {
                         "direccion": display_name,
                         "latitud": nominatim_response.get("lat"),
@@ -289,8 +312,11 @@ def retornaGeolocalizacion(request: RequestGetGeo):
 
         if not encontre_en_nominatim:
             google_maps_service = GoogleMapsService()
+            
+            
+            
             response_api_google_maps = google_maps_service.obtener_geolocalizacion(
-                direccion_para_apis_externas, direccion_procesada
+                direccion_para_apis_externas, is_rural
             )
             if response_api_google_maps is not None:
                 direccion_procesada.google_maps = response_api_google_maps
@@ -309,7 +335,7 @@ def retornaGeolocalizacion(request: RequestGetGeo):
 
                 # Validar si es aceptable por cualquiera de los criterios
                 if (
-                    validando_google > 50 or porcentaje_palabras_comunes > 75
+                 (validando_google > 50 or porcentaje_palabras_comunes > 75)  or is_rural
                 ):  # Ajusta el porcentaje según necesidad
                     location = response_api_google_maps["geometry"]["location"]
                     resumen = {
