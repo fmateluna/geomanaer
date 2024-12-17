@@ -19,87 +19,97 @@ def cargar_maestro_calles(archivo):
 
 
 def procesa_direccion_maestro_calle(direccion_procesada: InfoGeoDireccion):
-    ruta_maestro_calles = obtener_ruta_maestro_calles()
+    try:
+        ruta_maestro_calles = obtener_ruta_maestro_calles()
 
-    # Crear la conexión a DuckDB
-    conn = duckdb.connect(ruta_maestro_calles)
+        # Crear la conexión a DuckDB
+        conn = duckdb.connect(ruta_maestro_calles)
 
-    # Asegurarse de que las variables no sean None y asignarles un valor por defecto vacío si lo son
-    nombre_via = direccion_procesada.nombre_via.strip().upper() if direccion_procesada.nombre_via else ""
-    comuna = direccion_procesada.comuna.strip().upper() if direccion_procesada.comuna else ""
-    region = direccion_procesada.region.strip().upper() if direccion_procesada.region else ""
-    jerarquia = direccion_procesada.jerarquia.strip().upper() if direccion_procesada.jerarquia else ""
+        # Función para escapar comillas simples
+        def escapar_comillas(valor):
+            return valor.replace("'", "''") if valor else ""
 
-    # Optimización: Consultar solo las filas potencialmente relevantes
-    query = f"""
-    SELECT * 
-    FROM maestro_calles
-    WHERE 
-        upper(COMUNA) LIKE '%{comuna}%' 
-        OR upper(REGION) LIKE '%{region}%'
-        OR upper(NOMBRE_VIA) ILIKE '%{nombre_via}%'
-    """
-    cursor = conn.execute(query)
-    rows = cursor.fetchall()
-    column_names = [desc[0] for desc in cursor.description]
+        # Asegurarse de que las variables no sean None, limpiar espacios y escapar comillas
+        nombre_via = escapar_comillas(direccion_procesada.nombre_via.strip().upper()) if direccion_procesada.nombre_via else ""
+        comuna = escapar_comillas(direccion_procesada.comuna.strip().upper()) if direccion_procesada.comuna else ""
+        region = escapar_comillas(direccion_procesada.region.strip().upper()) if direccion_procesada.region else ""
+        jerarquia = escapar_comillas(direccion_procesada.jerarquia.strip().upper()) if direccion_procesada.jerarquia else ""
 
-    mejor_similitud = 0
-    mejor_fila = None  # Solo una fila de mejor resultado
+        # Optimización: Consultar solo las filas potencialmente relevantes
+        query = f"""
+        SELECT * 
+        FROM maestro_calles
+        WHERE 
+            upper(COMUNA) LIKE '%{comuna}%' 
+            OR upper(REGION) LIKE '%{region}%'
+            OR upper(NOMBRE_VIA) ILIKE '%{nombre_via}%'
+        """
+        cursor = conn.execute(query)
+        rows = cursor.fetchall()
+        column_names = [desc[0] for desc in cursor.description]
 
-    for fila in rows:
-        # Acceder a las columnas por índice a través de sus nombres
-        jerarquia_similitud = fuzz.ratio(fila[column_names.index("JERARQUIA")].upper(), jerarquia) if fila[column_names.index("JERARQUIA")] else 0
-        comuna_similitud = fuzz.ratio(fila[column_names.index("COMUNA")].upper(), comuna) if fila[column_names.index("COMUNA")] else 0
-        region_similitud = fuzz.ratio(fila[column_names.index("REGION")].upper(), region) if fila[column_names.index("REGION")] else 0
-        nombre_via_similitud = fuzz.ratio(fila[column_names.index("NOMBRE_VIA")].upper(), nombre_via) if fila[column_names.index("NOMBRE_VIA")] else 0
+        mejor_similitud = 0
+        mejor_fila = None  # Solo una fila de mejor resultado
 
-        puntaje_total = (
-            ((jerarquia_similitud > 70) * jerarquia_similitud)
-            + (comuna_similitud >= 70) * comuna_similitud
-            + (region_similitud >= 70) * region_similitud
-            + (nombre_via_similitud >= 50) * nombre_via_similitud
-        )
+        for fila in rows:
+            # Acceder a las columnas por índice a través de sus nombres
+            jerarquia_similitud = fuzz.ratio(fila[column_names.index("JERARQUIA")].upper(), jerarquia) if fila[column_names.index("JERARQUIA")] else 0
+            comuna_similitud = fuzz.ratio(fila[column_names.index("COMUNA")].upper(), comuna) if fila[column_names.index("COMUNA")] else 0
+            region_similitud = fuzz.ratio(fila[column_names.index("REGION")].upper(), region) if fila[column_names.index("REGION")] else 0
+            nombre_via_similitud = fuzz.ratio(fila[column_names.index("NOMBRE_VIA")].upper(), nombre_via) if fila[column_names.index("NOMBRE_VIA")] else 0
 
-        if puntaje_total > mejor_similitud:
-            mejor_similitud = puntaje_total
-            mejor_fila = fila  # Actualizamos con la nueva mejor fila
+            puntaje_total = (
+                ((jerarquia_similitud > 70) * jerarquia_similitud)
+                + (comuna_similitud >= 70) * comuna_similitud
+                + (region_similitud >= 70) * region_similitud
+                + (nombre_via_similitud >= 50) * nombre_via_similitud
+            )
 
-    # Cerrar la conexión
-    conn.close()
+            if puntaje_total > mejor_similitud:
+                mejor_similitud = puntaje_total
+                mejor_fila = fila  # Actualizamos con la nueva mejor fila
 
-    # Devolver mejor fila como diccionario (opcional, para facilitar el uso posterior)
-    if mejor_fila:
-        mejor_resultado_callejero = {column_names[idx]: value for idx, value in enumerate(mejor_fila)}
-        
-        datos_callejeros = DatosCallejeros()
-        direccion_procesada.nombre_via = mejor_resultado_callejero["NOMBRE_VIA"]
-        datos_callejeros.jerarquia = mejor_resultado_callejero["JERARQUIA"]
-        datos_callejeros.cen_lat = mejor_resultado_callejero["CEN_LAT"]
-        datos_callejeros.cut = str(mejor_resultado_callejero["CUT"])
-        datos_callejeros.cut_r = str(mejor_resultado_callejero["CUT_R"])
-        datos_callejeros.cen_lat = mejor_resultado_callejero["CEN_LAT"]
-        datos_callejeros.cen_lon = mejor_resultado_callejero["CEN_LON"]
-        
-        direccion_procesada.datos_callejeros = datos_callejeros
-        
-        direccion_procesada.direccion_formateada = (
-            mejor_resultado_callejero["JERARQUIA"]
-            + " "
-            + mejor_resultado_callejero["NOMBRE_VIA"]
-            + " "
-            + direccion_procesada.numero
-            + ", "
-            + mejor_resultado_callejero["COMUNA"]
-            + ", "
-            + mejor_resultado_callejero["PROVINCIA"]
-            + ", "
-            + mejor_resultado_callejero["REGION"]
-        )
-        
-        return  direccion_procesada   
-    return None #Te falta calle..
+        # Devolver mejor fila como diccionario (opcional, para facilitar el uso posterior)
+        if mejor_fila:
+            mejor_resultado_callejero = {column_names[idx]: value for idx, value in enumerate(mejor_fila)}
+            
+            datos_callejeros = DatosCallejeros()
+            direccion_procesada.nombre_via = mejor_resultado_callejero["NOMBRE_VIA"]
+            datos_callejeros.jerarquia = mejor_resultado_callejero["JERARQUIA"]
+            datos_callejeros.cen_lat = mejor_resultado_callejero["CEN_LAT"]
+            datos_callejeros.cut = str(mejor_resultado_callejero["CUT"])
+            datos_callejeros.cut_r = str(mejor_resultado_callejero["CUT_R"])
+            datos_callejeros.cen_lat = mejor_resultado_callejero["CEN_LAT"]
+            datos_callejeros.cen_lon = mejor_resultado_callejero["CEN_LON"]
+            
+            direccion_procesada.datos_callejeros = datos_callejeros
+            
+            direccion_procesada.direccion_formateada = (
+                mejor_resultado_callejero["JERARQUIA"]
+                + " "
+                + mejor_resultado_callejero["NOMBRE_VIA"]
+                + " "
+                + direccion_procesada.numero
+                + ", "
+                + mejor_resultado_callejero["COMUNA"]
+                + ", "
+                + mejor_resultado_callejero["PROVINCIA"]
+                + ", "
+                + mejor_resultado_callejero["REGION"]
+            )
+            
+            return direccion_procesada   
 
+    except Exception as e:
+        # Manejo de errores de la base de datos
+        print(f"Error al procesar la dirección en el maestro de calles: {e}")
+        return None
+    finally:
+        # Asegurar que la conexión se cierra
+        if 'conn' in locals() and conn:
+            conn.close()
 
+    return None  # En caso de que no se encuentre una calle adecuada
 
 # Cargar glosario de jerarquías desde un archivo JSON
 def cargar_traductores(archivo):
