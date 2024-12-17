@@ -312,9 +312,6 @@ def retorna_geolocalizacion(request: RequestGetGeo):
 
         if not encontre_en_nominatim:
             google_maps_service = GoogleMapsService()
-            
-            
-            
             response_api_google_maps = google_maps_service.obtener_geolocalizacion(
                 direccion_para_apis_externas, is_rural
             )
@@ -335,7 +332,7 @@ def retorna_geolocalizacion(request: RequestGetGeo):
 
                 # Validar si es aceptable por cualquiera de los criterios
                 if (
-                 (validando_google > 50 or porcentaje_palabras_comunes > 75)  or is_rural
+                 (validando_google > 50 or porcentaje_palabras_comunes > 75) 
                 ):  # Ajusta el porcentaje según necesidad
                     location = response_api_google_maps["geometry"]["location"]
                     resumen = {
